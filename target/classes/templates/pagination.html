@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="cn-ZH">
+
+<head>
+    <meta charset="UTF-8"/>
+    <title>pagination.js - 分页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../css/common.css" media="screen"/>
+    <!--<link rel="stylesheet" type="text/css" href="../css/highlight.min.css" media="screen"/>
+    <link rel="stylesheet" type="text/css" href="../css/reset.css" media="screen"/>-->
+    <link rel="stylesheet" type="text/css" href="../css/pagination.css" media="screen"/>
+</head>
+
+<body>
+<table width="80%" align="center">
+    <tr>
+        <td>作者</td>
+        <td>教程名称</td>
+        <td>地址</td>
+    </tr>
+    <tbody id="dataList">
+    </tbody>
+</table>
+<div class="wrapper">
+    <div class="eg">
+        <div class="M-box m-style"></div>
+        <div class="tips">当前是第<span class="now">1</span>页,总共<span class="total"></span>页,总共<span class="count"></span>条数据,每页
+            <select class="sel">
+                <option value="1">1条</option>
+                <option value="2">2条</option>
+                <option value="3">3条</option>
+            </select>
+        </div>
+    </div>
+</div>
+<script src="../js/jquery.min.js"></script>
+<!--<script src="../js/highlight.min.js"></script>-->
+<script src="../js/jquery.pagination.js"></script>
+<script>
+    jQuery(function($){
+        var totalPage = 1;//总共多少页
+        var totalRecords = 1;//总共多少条
+        var pageSize = 2;//每页显示多少页
+        $(".sel").find("option[value='"+pageSize+"']").attr("selected",true);
+        loadList(1,pageSize);
+
+        $(".sel").change(function(){
+            var now = $('.now').text();
+            var showDate = $(".sel").val();
+            loadList(now,showDate);
+        });
+
+        function loadList(pno,pageSize)
+        {
+            $.ajax({
+                type:"post",
+                url:"/learn/queryList",
+                dataType: "json",
+                data: { 'pageNum': pno,'pageSize': pageSize},
+                success:function(result) {
+                    console.log(result);
+                    console.log(pno);
+                    if (result.success) {
+                        var count = result.total;
+                        var data = result.data;
+                        totalRecords = count;
+                        totalPage = Math.ceil(count / pageSize);
+                        var dataList="";
+                        $.each(data, function(i, item) {
+                            dataList+='<tr>'+
+                                '<td>'+item.author+'</td>'+
+                                '<td>'+item.title+'</td>'+
+                                '<td>'+item.url+'</td>'+
+                                '</tr>';
+                        });
+                        $("#dataList").html(dataList);
+                        $('.total').text(totalPage);
+                        $('.count').text(count);
+                        $('.M-box').pagination({
+                            pageCount: totalPage,
+                            current:pno,//当前第几页
+                            showData:pageSize,
+                            jump: true,
+                            coping: true, //首页和尾页
+                            keepShowPN: true, //是否一直显示上一页下一页
+                            homePage: '首页',
+                            endPage: '末页',
+                            prevContent: '上页',
+                            nextContent: '下页',
+                            mode: 'unfixed',
+                            callback:PageClick
+
+                        });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    alert('网络连接异常，请重试！')
+                }
+            });
+        }
+        //回调函数
+        PageClick = function(index){
+            $('.now').text(index.getCurrent());
+            var showDate = $(".sel").val();
+            loadList(index.getCurrent(),showDate);//点击分页加载列表数据
+        }
+    });
+</script>
+</body>
+
+</html>
